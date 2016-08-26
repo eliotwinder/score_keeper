@@ -1,3 +1,8 @@
+"""
+to initialize database do:
+    db.create_all()
+    db.session.commit()
+"""
 from collections import defaultdict
 
 from app import db
@@ -14,8 +19,12 @@ class GamePlayer(db.Model):
     game = db.relationship('Game', back_populates='players')
 
     @property
-    def playername(self, playername):
+    def playername(self):
         return self.player.playername
+
+    @property
+    def gametype(self):
+        return self.game.gametype
 
 
 class Player(db.Model):
@@ -42,7 +51,7 @@ class Player(db.Model):
         '''
         stats = defaultdict(dict)
         for game in self.games:
-            type_stats = stats[game.type]
+            type_stats = stats[game.gametype]
             if game.win:
                 type_stats['wins'] = type_stats.get('wins', 0) + 1
             else:
@@ -58,7 +67,7 @@ class Player(db.Model):
 
 class Game(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    gametype = db.Column(db.String(80), unique=True)
+    gametype = db.Column(db.String(80))
     players = db.relationship(
         'GamePlayer',
         back_populates='game',
@@ -66,24 +75,29 @@ class Game(db.Model):
 
     def __init__(self, gametype, winners, losers):
         self.gametype = gametype
-        for playername in winners.iteritems():
+        for playername in winners:
             self.add_player(playername, win=True)
-        for playername in winners.iteritems():
+        for playername in losers:
             self.add_player(playername, win=False)
         db.session.add(self)
 
     def __repr__(self):
         playernames = [p.player.playername for p in self.players]
-        return '< Game %s %s>' % (self.gametype, playernames)
+        return ('< Game %s: %s beat %s>' %
+                (self.gametype, self.winners, self.losers))
 
     @property
     def winners(self):
-        return [player.playername for player in self.players if player.win]
+        return [player.playername
+                for player in self.players if player.win]
+
+    @property
+    def losers(self):
+        return [player.playername
+                for player in self.players if not player.win]
 
     def add_player(self, playername, win):
         game_player = GamePlayer(win=win)
         player = Player.query.filter_by(playername=playername).first()
         game_player.player = player
         self.players.append(game_player)
-
-Game()

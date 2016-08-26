@@ -6,6 +6,7 @@ app = Flask(__name__)
 app.config.from_object('config')
 db = SQLAlchemy(app)
 
+
 @app.route('/player_/<player_name>', methods=['GET', 'POST'])
 def PlayerHandler(player_name):
     if request.method == 'GET':
