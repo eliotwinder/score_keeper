@@ -3,7 +3,6 @@ to initialize database do:
     db.create_all()
     db.session.commit()
 """
-from collections import defaultdict
 
 
 def get_models(db):
@@ -17,60 +16,127 @@ def get_models(db):
         player = db.relationship('Player', back_populates='games')
         game = db.relationship('Game', back_populates='players')
 
+        def __repr__(self):
+            win = 'yes' if self.win else 'no'
+            return '<GamePlayer player: %s win: %s>' % (
+                self.player.name, win)
+
         @property
-        def playername(self):
-            return self.player.playername
+        def name(self):
+            return self.player.name
 
         @property
         def gametype(self):
             return self.game.gametype
 
+        @property
+        def winners(self):
+            return [winner for winner in self.game.winners
+                    if winner != self.player.name]
+
+        @property
+        def losers(self):
+            return [loser for loser in self.game.losers
+                    if loser != self.player.name]
+
     class Player(db.Model):
         id = db.Column(db.Integer, primary_key=True)
-        playername = db.Column(db.String(80), unique=True)
+        name = db.Column(db.String(80), unique=True)
         games = db.relationship('GamePlayer', back_populates='player')
 
         def __repr__(self):
-            return '<Player %s>' % self.playername
+            return '<Player %s>' % self.name
 
-        def __init__(self, playername):
-            self.playername = playername
+        def __init__(self, name):
+            self.name = name
             db.session.add(self)
 
         def to_dict(self):
             return {
                 'id': self.id,
-                'playername': self.playername,
+                'name': self.name,
             }
 
         @classmethod
         def get_all_players(self):
             players = Player.query.all()
-            return [player.get_stats() for player in players]
+            return {
+                player.name: player.get_stats()
+                for player in players
+            }
 
         def get_stats(self):
             '''
             returns a dict with key game type and value:
-            {'wins': x, 'loses': y}
-            also has one key, 'player_info' with aself-explanatory value
-            '''
-            stats = defaultdict(dict)
-            for game in self.games:
-                type_stats = stats[game.gametype]
-                if game.win:
-                    type_stats['wins'] = type_stats.get('wins', 0) + 1
-                else:
-                    type_stats['losses'] = type_stats.get('losses', 0) + 1
-            total_wins = 0
-            total_losses = 0
-            for game_type, type_dict in stats.iteritems():
-                total_wins += type_dict.get('wins', 0)
-                total_losses += type_dict.get('losses', 0)
-            stats['total'] = {'wins': total_wins, 'losses': total_losses}
-            return {
-                "playername": self.playername,
-                "stats": stats
+            {
+                'wins': x,
+                'losses': y,
+                'opponents': {
+                    'opponent_name': {
+                        'wins': z,
+                        'losses': h,
+                    },
+                }
             }
+            '''
+            stats = {}
+            total_stats = {
+                "wins": 0,
+                "losses": 0,
+                "opponents": {},
+            }
+
+            for game in self.games:
+                type_stats = stats.get(game.gametype, {
+                        'wins': 0,
+                        'losses': 0,
+                        'opponents': {},
+                    })
+                if game.win:
+                    # increment total wins
+                    total_stats['wins'] += 1
+
+                    # increment wins for this gametype
+                    type_stats['wins'] += 1
+
+                    for loser in game.losers:
+                        total_opponent = total_stats['opponents'].get(loser, {
+                                "wins": 0,
+                                "losses": 0,
+                            })
+                        total_opponent['wins'] += 1
+                        total_stats['opponents'][loser] = total_opponent
+
+                        opponent = type_stats['opponents'].get(loser, {
+                                "wins": 0,
+                                "losses": 0,
+                            })
+                        opponent['wins'] += 1
+                        type_stats['opponents'][loser] = opponent
+                else:
+                    total_stats['losses'] += 1
+                    type_stats['losses'] += 1
+
+                    for winner in game.winners:
+                        total_opponent = total_stats['opponents'].get(
+                            winner, {
+                                "wins": 0,
+                                "losses": 0,
+                            })
+                        total_opponent['losses'] += 1
+                        total_stats['opponents'][winner] = total_opponent
+
+                        opponent = type_stats.get(winner, {
+                                "wins": 0,
+                                "losses": 0,
+                            })
+                        opponent['losses'] += 1
+                        type_stats['opponents'][winner] = opponent
+                stats[game.gametype] = type_stats
+
+            stats['total'] = total_stats
+
+            return stats
 
     class Game(db.Model):
         id = db.Column(db.Integer, primary_key=True)
@@ -82,10 +148,10 @@ def get_models(db):
 
         def __init__(self, gametype, winners, losers):
             self.gametype = gametype
-            for playername in winners:
-                self.add_player(playername, win=True)
-            for playername in losers:
-                self.add_player(playername, win=False)
+            for name in winners:
+                self._add_player(name, win=True)
+            for name in losers:
+                self._add_player(name, win=False)
             db.session.add(self)
 
         def __repr__(self):
@@ -94,18 +160,26 @@ def get_models(db):
 
         @property
         def winners(self):
-            return [player.playername
+            return [player.name
                     for player in self.players if player.win]
 
         @property
         def losers(self):
-            return [player.playername
+            return [player.name
                     for player in self.players if not player.win]
 
-        def add_player(self, playername, win):
+        def to_dict(self):
+            return {
+                "gametype": self.gametype,
+                "winners": self.winners,
+                "losers": self.losers,
+            }
+
+        def _add_player(self, name, win):
             game_player = GamePlayer(win=win)
-            player = Player.query.filter_by(playername=playername).first()
+            player = Player.query.filter_by(name=name).first()
             game_player.player = player
             self.players.append(game_player)
 
+    db.session.commit()
     return Player, Game

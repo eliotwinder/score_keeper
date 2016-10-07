@@ -1,0 +1,44 @@
+.text {
+    display: flex;
+}
+
+.form {
+    display: flex;
+    border: solid 1px #d9d9d9;
+    width: 315px;
+    height: 44px;
+    align-items: center;
+    margin-left: 8px;
+    font-family: helvetica,arial,verdana,sans-serif;
+}
+
+.bustimage {
+    width: 15px;
+    margin-left: 15px;
+    margin-right: 11px;
+    margin-top: -2px;
+}
+
+.input {
+    border: none;
+    font-family: Helvetica;
+    font-size: 16px;
+    font-weight: lighter;
+}
+
+.button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 79px;
+    height: 32px;
+    border-radius: 2px;
+    background-color: #ff8517;
+    color: white;
+    font-family: Helvetica;
+    font-size: 16px;
+    font-weight: lighter;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+    margin-right: 7px;
+}

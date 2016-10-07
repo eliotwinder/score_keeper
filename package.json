@@ -1,0 +1,22 @@
+{
+  "name": "score_keeper",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/eliotwinder/score_keeper.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/eliotwinder/score_keeper/issues"
+  },
+  "homepage": "https://github.com/eliotwinder/score_keeper#readme",
+  "dependencies": {
+    "webpack": "^1.13.2"
+  }
+}
