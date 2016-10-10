@@ -9,11 +9,12 @@ var StatsPlugin = require('stats-webpack-plugin');
 module.exports = {
     // The entry file. All your app roots fromn here.
     entry: [
+        'babel-polyfill',
         path.join(__dirname, 'app/index.js')
     ],
     // Where you want the output to go
     output: {
-        path: path.join(__dirname, '/dist/'),
+        path: path.join(__dirname, '../static/'),
         filename: '[name]-[hash].min.js',
         publicPath: '/'
     },
@@ -77,15 +78,26 @@ module.exports = {
         }, {
             test: /\.json?$/,
             loader: 'json'
-        }, {
+        },
+        {
+           test: /\.css$/,
+           loader: ExtractTextPlugin.extract('style', 'css?modules')
+        },
+        {
+            test: /\.png$/,
+            loader: "url-loader?limit=100000"
+        },
+        {
             test: /\.scss$/,
             // we extract the styles into their own .css file instead of having
             // them inside the js.
             loader: ExtractTextPlugin.extract('style', 'css!postcss!sass')
-        },{
+        },
+        {
             test: /\.woff(2)?(\?v=[0-9]\.[0-9]\.[0-9])?$/,
             loader: "url-loader?limit=10000&minetype=application/font-woff"
-        },{
+        },
+        {
             test: /\.(ttf|eot|svg)(\?v=[0-9]\.[0-9]\.[0-9])?$/,
             loader: "file-loader"
         }]

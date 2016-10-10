@@ -16,6 +16,16 @@ db = SQLAlchemy(app)
 Player, Game = get_models(db)
 
 
+@app.route('/', methods=['GET'])
+def index():
+    return app.send_static_file('index.html')
+
+
+@app.route('/<path:path>', methods=['GET'])
+def serve_static(path):
+    return app.send_static_file(path)
+
+
 @app.route('/players', methods=['GET'])
 def AllPlayersRoute():
     resp = make_response((
