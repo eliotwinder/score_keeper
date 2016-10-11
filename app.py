@@ -63,5 +63,6 @@ def GameHandler(player_name=None):
 
 if __name__ == "__main__":
     db.create_all()
-    http_server = WSGIServer(('', 5000), app)
+    db.session.commit()
+    http_server = WSGIServer(('', 80), app)
     http_server.serve_forever()
